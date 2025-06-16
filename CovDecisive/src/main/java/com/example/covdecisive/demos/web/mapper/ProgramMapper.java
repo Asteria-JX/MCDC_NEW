@@ -1,5 +1,7 @@
 package com.example.covdecisive.demos.web.mapper;
 import java.util.List;
+import java.util.Optional;
+
 import org.apache.ibatis.annotations.*;
 import com.example.covdecisive.demos.web.model.Program;
 
@@ -9,13 +11,11 @@ public interface ProgramMapper {
     @Results({
             @Result(property = "programId", column = "program_id"),
             @Result(property = "programName", column = "program_name"),
-            @Result(property = "version", column = "version"),
-            @Result(property = "description", column = "description"),
             @Result(property = "user_id", column = "user_id")
     })
     List<Program> getAll(Integer userId);
 
-    @Insert("INSERT INTO programs (program_name, version, description,user_id) VALUES (#{programName}, #{version}, #{description}, #{user_id})")
+    @Insert("INSERT INTO programs (program_name, user_id) VALUES (#{programName}, #{user_id})")
     @Options(useGeneratedKeys = true, keyProperty = "programId")
     void insert(Program program);
 
@@ -23,8 +23,6 @@ public interface ProgramMapper {
     @Results({
             @Result(property = "programId", column = "program_id"),
             @Result(property = "programName", column = "program_name"),
-            @Result(property = "version", column = "version"),
-            @Result(property = "description", column = "description")
     })
     List<Program> getProgramsByUserID(int userID);
 
@@ -32,8 +30,12 @@ public interface ProgramMapper {
     @Results({
             @Result(property = "programId", column = "program_id"),
             @Result(property = "programName", column = "program_name"),
-            @Result(property = "version", column = "version"),
-            @Result(property = "description", column = "description")
     })
     Program getProgramsByProgramID(int programID);
+
+    @Select("SELECT program_id, program_name, user_id FROM programs WHERE program_id = #{programId}")
+    Optional<Program> selectByProgramId(Integer programId);
+
+    @Select("SELECT program_name FROM programs WHERE program_id=#{program_id}")
+    String selectProgramNameById(Integer programId);
 }

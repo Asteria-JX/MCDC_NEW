@@ -25,26 +25,6 @@ public class TestResourceController {
     @Autowired
     private TestResourceService testResourceService;
 
-    @PostMapping("/uploadTestResources")
-    public void uploadTestResources(
-            @RequestParam("files") List<MultipartFile> files,
-            @RequestParam("program_id") Integer programId,
-            @RequestParam("user_id") Integer userId) throws IOException {
-        List<TestResource> resources = new ArrayList<>();
-        for (MultipartFile file : files) {
-            TestResource resource = new TestResource();
-            String content = new String(file.getBytes());
-            resource.setName(file.getOriginalFilename());
-            resource.setProgram_id(programId);
-            resource.setUser_id(userId);
-            resource.setCode_content(content);
-            // 这里你可以扩展保存 file 到磁盘的逻辑
-            resources.add(resource);
-        }
-        testResourceService.batchInsert(resources);
-        //return ResponseEntity.ok("测试用例上传成功");
-    }
-
     @GetMapping("/testall")
     public List<TestResource> getTestAll(@RequestParam Integer user_id, @RequestParam Integer program_id) {
 

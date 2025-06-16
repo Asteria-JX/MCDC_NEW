@@ -37,8 +37,8 @@ public class ProgramController {
     @Autowired
     private JavaExecutionService javaExecutionService;
 
-    @Autowired
-    private CodeService codeService;
+//    @Autowired
+//    private CodeService codeService;
 
     @Autowired
     private TestResourceService testResourceService;
@@ -51,6 +51,7 @@ public class ProgramController {
 
     @GetMapping("/all")
     public List<Program> getAllPrograms(@RequestParam Integer userId) {
+        System.out.println("all:"+userId);
         return programService.getAll(userId);
     }
 
@@ -59,11 +60,10 @@ public class ProgramController {
                               @RequestParam("user_id") Integer user_id,
                               @RequestParam("files") List<MultipartFile> files) throws IOException {
 
+        System.out.println("uploadProject:"+programName+user_id);
         Program program = new Program();
         program.setProgramName(programName);
         program.setUserId(user_id);
-        program.setVersion("1.0");
-        program.setDescription("上传生成");
         programService.insert(program); // 插入 programs 表
 
         int programId = program.getProgramId(); // 获取插入后的主键
@@ -117,38 +117,4 @@ public class ProgramController {
         }
     }
 
-    /**
-     * 运行指定ID的Java项目并返回执行结果。
-     * 前端通过 POST 请求发送 { "programId": 123 }
-     *
-     * @param request 包含 programId 的请求体
-     * @return 包含运行日志的 JSON 响应
-     */
-    @PostMapping("/runProject")
-    public ResponseEntity<Map<String, String>> runProject(@RequestBody RunProjectRequest request) {
-        Map<String, String> response = new HashMap<>();
-        try {
-            List<SourceCode> sourceCodes=sourceCodeService.getByProgramId(request.getProgramId());
-
-            for (SourceCode code : sourceCodes) {
-                System.out.println("  Code ID: " + code.getCodeId()); // Assuming 'id' is your code_id
-            }
-            TestResource testResource=new TestResource();
-            List<TestResource> testResources = testResourceService.getTestAll(2,request.getProgramId());
-            String logOutput = codeService.runTests(sourceCodes,testResources.get(0));
-            response.put("log", logOutput);
-            response.put("message", "项目运行请求已处理。");
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            // 捕获服务层抛出的自定义异常
-            response.put("log", e.getMessage());
-            response.put("message", "项目运行失败。");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            // 捕获其他未知异常
-            response.put("log", "服务器内部错误: " + e.getMessage());
-            response.put("message", "项目运行失败。");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 }

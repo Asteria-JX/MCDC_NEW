@@ -39,4 +39,8 @@ public interface TestResourceMapper {
             @Result(property = "code_content", column = "code_content")
     })
     TestResource getTestResourceById(int id);
+
+    @Insert("INSERT INTO test_resources (file_path, test_program_id, user_id, code_content) " +
+            "VALUES (#{filePath}, #{testProgramId}, #{userId}, #{codeContent})")
+    void insertTestResource(TestResource testResource);
 }

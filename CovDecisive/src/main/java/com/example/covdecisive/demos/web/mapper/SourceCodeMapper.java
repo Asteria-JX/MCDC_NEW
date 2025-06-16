@@ -43,4 +43,13 @@ public interface SourceCodeMapper {
             @Result(property = "codeContent", column = "code_content")
     })
     List<SourceCode> getSourceByProgramId(@Param("programId") int programId);
+
+    @Select("SELECT * FROM source_code WHERE program_id = #{programId}")
+    @Results({
+            @Result(property = "codeId", column = "code_id"),
+            @Result(property = "programId", column = "program_id"),
+            @Result(property = "filePath", column = "file_path"),
+            @Result(property = "codeContent", column = "code_content")
+    })
+    List<SourceCode> selectByProgramId(Integer programId);
 }

@@ -1,5 +1,4 @@
 package com.example.covdecisive.demos.web.service;
-import com.example.covdecisive.demos.web.model.SourceCodeFile;
 import io.swagger.models.auth.In;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,10 +30,5 @@ public class ProgramService {
         return programMapper.getProgramsByUserID(userID);
     }
 
-    public List<SourceCodeFile> getSourceFilesByProgramId(int programId) {
-        String sql = "SELECT file_path, code_content FROM source_code WHERE program_id = ?";
-        return jdbcTemplate.query(sql, new Object[]{programId}, (rs, rowNum) ->
-                new SourceCodeFile(rs.getString("file_path"), rs.getString("code_content"))
-        );
-    }
+
 }
