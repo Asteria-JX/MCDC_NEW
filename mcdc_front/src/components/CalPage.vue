@@ -43,7 +43,8 @@
               :options="[
               { label: 'EvoSuite', value: 0 },
               { label: 'Randoop', value: 1 },
-              { label: 'LLM大模型', value: 2 }
+              { label: 'LLM大模型', value: 2 },
+              { label: 'Python', value: 3 }
             ]"
           />
 
@@ -154,6 +155,12 @@ import { Message } from '@arco-design/web-vue';
 
 export default {
   name: 'CalPage',
+  props: {
+    userID: {
+      type: Number,
+      required: true
+    }
+  },
   components: {},
   data() {
     return {
@@ -171,7 +178,6 @@ export default {
       testCaseModalVisible: false,
       analysisModalVisible: false,
       testCases: [], // 存储解析后的测试用例数据
-      userID: 2,
       treeData: [
         {
           title: 'Trunk 1',
@@ -338,16 +344,30 @@ export default {
       try {
         if(this.selectedGenerationMethod=='0'){//使用Evosuite
           const res = await axios.get('/generateTestCaseByEvo', {
-            params: { programId: this.selectedTestProgramId, userId: 2 }
+            params: { programId: this.selectedTestProgramId, userId:this.userID }
           });
           // 直接使用后端返回的数据
           this.testCases = res.data;
         }
         else if(this.selectedGenerationMethod=='1'){//使用randoop
           const res = await axios.get('/generateTestCase', {
-            params: { programId: this.selectedTestProgramId, userId: 2 }
+            params: { programId: this.selectedTestProgramId, userId:this.userID }
           });
           // 直接使用后端返回的数据
+          this.testCases = res.data;
+        }
+        else if (this.selectedGenerationMethod == '2') { // 使用 LLM
+          const res = await axios.post('/LLMgenerate', {
+            programId: this.selectedTestProgramId,
+            userId: this.userID
+          });
+          this.testCases = res.data;
+        }
+        else if(this.selectedGenerationMethod == '3'){
+          const res = await axios.post('/', {
+            programId: this.selectedTestProgramId,
+            userId: this.userID
+          });
           this.testCases = res.data;
         }
         // 添加调试日志
