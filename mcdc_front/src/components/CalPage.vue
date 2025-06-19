@@ -22,7 +22,7 @@
     <a-modal
         v-model:visible="testCaseModalVisible"
         title="生成测试用例"
-        width="80%"
+        width="50%"
         :footer="null"
         :maskClosable="false"
     >
@@ -35,6 +35,18 @@
               :options="programOptions"
               @change="val => selectedTestProgramId = val"
           />
+
+          <label>选择生成方法</label>
+          <a-select
+              v-model="selectedGenerationMethod"
+              style="width: 100%;"
+              :options="[
+              { label: 'EvoSuite', value: 0 },
+              { label: 'Randoop', value: 1 },
+              { label: 'LLM大模型', value: 2 }
+            ]"
+          />
+
         </div>
 
         <div class="action-section" style="display: flex; justify-content: center;">
@@ -56,27 +68,27 @@
         </div>
 
         <div v-else-if="testCases.length > 0" class="test-cases-container" style="max-height: 400px; overflow-y: auto;">
-          <h3>生成的MC/DC测试用例 (共 {{ testCases.length }} 个):</h3>
-          <table class="custom-table">
-            <thead>
-            <tr>
-              <th>#</th>
-              <th>逻辑表达式</th>
-              <th>条件组合</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="(testCase, index) in testCases" :key="index">
-              <td>{{ testCase.index }}</td>
-              <td>{{ testCase.expression }}</td>
-              <td>
-                <div v-for="(value, key) in testCase.conditionValues" :key="key">
-                  {{ key }}: {{ value }}
-                </div>
-              </td>
-            </tr>
-            </tbody>
-          </table>
+<!--          <h3>生成的MC/DC测试用例 (共 {{ testCases.length }} 个):</h3>-->
+<!--          <table class="custom-table">-->
+<!--            <thead>-->
+<!--            <tr>-->
+<!--              <th>#</th>-->
+<!--              <th>逻辑表达式</th>-->
+<!--              <th>条件组合</th>-->
+<!--            </tr>-->
+<!--            </thead>-->
+<!--            <tbody>-->
+<!--            <tr v-for="(testCase, index) in testCases" :key="index">-->
+<!--              <td>{{ testCase.index }}</td>-->
+<!--              <td>{{ testCase.expression }}</td>-->
+<!--              <td>-->
+<!--                <div v-for="(value, key) in testCase.conditionValues" :key="key">-->
+<!--                  {{ key }}: {{ value }}-->
+<!--                </div>-->
+<!--              </td>-->
+<!--            </tr>-->
+<!--            </tbody>-->
+<!--          </table>-->
         </div>
         <div v-else class="empty-tip">
           <a-empty description="请选择程序并生成测试用例" />
@@ -145,6 +157,7 @@ export default {
   components: {},
   data() {
     return {
+      selectedGenerationMethod:null,
       programs: [],
       selectedProgramId: null,
       selectedTestProgramId: null,
@@ -206,7 +219,7 @@ export default {
     programOptions() {
       return this.programs.map(p => ({
         value: p.programId,
-        label: `${p.programName} (v${p.version})`
+        label: `${p.programName}`
       }));
     },
     testResourceOptions() {
@@ -313,6 +326,8 @@ export default {
     },
     // 生成测试用例
     async generateTestCases() {
+      console.log("选择的生成方法编号为",this.selectedGenerationMethod);
+
       if (!this.selectedTestProgramId) {
         Message.error('请先选择程序');
         return;
@@ -321,29 +336,36 @@ export default {
       this.generating = true;
       this.testCases = [];
       try {
-        const res = await axios.get('/generateTestCase', {
-          params: { programId: this.selectedTestProgramId }
-        });
-
-        // 直接使用后端返回的数据
-        this.testCases = res.data;
-
+        if(this.selectedGenerationMethod=='0'){//使用Evosuite
+          const res = await axios.get('/generateTestCaseByEvo', {
+            params: { programId: this.selectedTestProgramId, userId: 2 }
+          });
+          // 直接使用后端返回的数据
+          this.testCases = res.data;
+        }
+        else if(this.selectedGenerationMethod=='1'){//使用randoop
+          const res = await axios.get('/generateTestCase', {
+            params: { programId: this.selectedTestProgramId, userId: 2 }
+          });
+          // 直接使用后端返回的数据
+          this.testCases = res.data;
+        }
         // 添加调试日志
-        console.log("原始测试用例数据:", res.data);
-        console.log("赋值后的测试用例:", this.testCases);
+        // console.log("原始测试用例数据:", res.data);
+        // console.log("赋值后的测试用例:", this.testCases);
 
         // 验证数据格式
-        if (!Array.isArray(this.testCases) || this.testCases.length === 0) {
-          Message.warning('没有生成任何测试用例或返回数据格式不正确。');
-          return;
-        }
+        // if (!Array.isArray(this.testCases) || this.testCases.length === 0) {
+        //   Message.warning('没有生成任何测试用例或返回数据格式不正确。');
+        //   return;
+        // }
 
         // 确保每个测试用例都有索引
-        this.testCases.forEach((testCase, index) => {
-          if (testCase.index === undefined || testCase.index === null) {
-            testCase.index = index + 1;
-          }
-        });
+        // this.testCases.forEach((testCase, index) => {
+        //   if (testCase.index === undefined || testCase.index === null) {
+        //     testCase.index = index + 1;
+        //   }
+        // });
 
         Message.success(`成功生成 ${this.testCases.length} 个测试用例`);
       } catch (error) {
