@@ -137,7 +137,8 @@ const fetchProjects = async () => {
   try {
     const res = await axios.get('/all',{
       params: {
-        userId: userId.value // 默认用户ID为2
+        // userId: userId.value // 默认用户ID为2
+        userId: 2 // 默认用户ID为2
       }
     })
     projectList.value = res.data
@@ -224,7 +225,8 @@ const handleFileUpload = async(event)=> {
   if (!programName) return;
 
   formData.append("programName", programName);
-  formData.append("user_id", userId.value);
+  formData.append("user_id", 2);
+  // formData.append("user_id", userId.value);
   for (let file of files) {
     formData.append("files", file, file.webkitRelativePath);
   }

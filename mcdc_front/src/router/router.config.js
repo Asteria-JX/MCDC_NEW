@@ -6,13 +6,13 @@ export default [
         children: []
     },
     {
-        path: '/',// 路由地址
+        path: '/LoginPage',// 路由地址
         name: 'LoginPage',
         component: () => import('../views/LoginPage.vue'),// 文件地址
         children: []
     },
     {
-        path: '/indexPage',// 路由地址
+        path: '/',// 路由地址
         name: 'indexPage',
         component: () => import('../views/indexPage.vue'),// 文件地址
         children: []

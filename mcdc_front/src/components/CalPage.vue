@@ -206,7 +206,8 @@ export default {
     programOptions() {
       return this.programs.map(p => ({
         value: p.programId,
-        label: `${p.programName} (v${p.version})`
+        label: `${p.programName}`
+        //label: `${p.programName} (v${p.version})`
       }));
     },
     testResourceOptions() {
@@ -321,8 +322,12 @@ export default {
       this.generating = true;
       this.testCases = [];
       try {
-        const res = await axios.get('/generateTestCase', {
-          params: { programId: this.selectedTestProgramId }
+        const res = await axios.get('/generateProjectTests', {
+          params: {
+            programId: this.selectedTestProgramId,
+            //user_id: this.userID,
+            userId: 2
+          }
         });
 
         // 直接使用后端返回的数据
@@ -332,20 +337,20 @@ export default {
         console.log("原始测试用例数据:", res.data);
         console.log("赋值后的测试用例:", this.testCases);
 
-        // 验证数据格式
-        if (!Array.isArray(this.testCases) || this.testCases.length === 0) {
-          Message.warning('没有生成任何测试用例或返回数据格式不正确。');
-          return;
-        }
+        // // 验证数据格式
+        // if (!Array.isArray(this.testCases) || this.testCases.length === 0) {
+        //   Message.warning('没有生成任何测试用例或返回数据格式不正确。');
+        //   return;
+        // }
+        //
+        // // 确保每个测试用例都有索引
+        // this.testCases.forEach((testCase, index) => {
+        //   if (testCase.index === undefined || testCase.index === null) {
+        //     testCase.index = index + 1;
+        //   }
+        // });
 
-        // 确保每个测试用例都有索引
-        this.testCases.forEach((testCase, index) => {
-          if (testCase.index === undefined || testCase.index === null) {
-            testCase.index = index + 1;
-          }
-        });
-
-        Message.success(`成功生成 ${this.testCases.length} 个测试用例`);
+        //Message.success(`成功生成 ${this.testCases.length} 个测试用例`);
       } catch (error) {
         const errorMsg = error.response?.data?.message || error.message;
         Message.error(`生成测试用例失败: ${errorMsg}`);
