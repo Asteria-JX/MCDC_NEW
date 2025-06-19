@@ -39,7 +39,7 @@ public class SourceController {
     public String getCodeContent(
             @RequestParam("programId") int programId,
             @RequestParam("filePath") String filePath) {
-        String result = sourceCodeService.getCodeContent(programId, filePath);
+        String result = programCodeViewService.getCodeContent(programId, filePath);
         System.out.println("代码文件："+result);
         return result;
     }
@@ -99,5 +99,15 @@ public class SourceController {
         }
 
         return "";
+    }
+
+    //获取指定 programId 下所有 src/main/java 中的 .java 源文件内容
+    @ApiOperation("获取所有需要生成测试用例的java文件")
+    @GetMapping("/getJavaFilesNeedingTests")
+    public List<String> getJavaFilesNeedingTests(@RequestParam int programId) {
+        List<SourceCode> sourceCodes = sourceCodeService.getJavaFilesNeedingTests(programId);
+        return sourceCodes.stream()
+                .map(SourceCode::getCodeContent)
+                .collect(Collectors.toList());
     }
 }

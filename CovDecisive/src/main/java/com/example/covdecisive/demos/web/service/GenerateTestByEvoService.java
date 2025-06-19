@@ -135,14 +135,27 @@ public class GenerateTestByEvoService {
         if (!Files.exists(testDir)) {
             throw new Exception("EvoSuite 测试目录未生成，可能执行失败");
         }
-        //生成测试用例项目
-        TestProgram tp = new TestProgram();
-        tp.setProgramId(programId);
-        tp.setCreateWay(1);
-        tp.setUserId(userId);
-        tp.setTestProgramName("Evosuite_program"+programId+"_user"+userId);
-        testProgramMapper.insertTestProgram(tp);
-        //向测试用例项目插入代码
+
+
+        // 检查是否已存在相同programId和userId的测试项目
+        TestProgram existingTp = testProgramMapper.findByProgramIdAndUserId(programId, userId);
+        TestProgram tp;
+        //System.out.println("existingTp："+existingTp);
+
+        if (existingTp != null) {
+            // 使用已存在的测试项目
+            tp = existingTp;
+            System.out.println(">>> 使用已存在的测试项目，ID: " + tp.getTestProgramId());
+        } else {
+            // 创建新的测试项目
+            tp = new TestProgram();
+            tp.setProgramId(programId);
+            tp.setCreateWay(1);
+            tp.setUserId(userId);
+            tp.setTestProgramName("Evosuite_program"+programId+"_user"+userId);
+            testProgramMapper.insertTestProgram(tp);
+            System.out.println(">>> 创建新的测试项目，ID: " + tp.getTestProgramId());
+        }
         Files.walk(testDir)
                 .filter(Files::isRegularFile)
                 .filter(p -> p.toString().endsWith(".java"))
@@ -152,21 +165,31 @@ public class GenerateTestByEvoService {
                         String filePath = testDir.relativize(path).toString()
                                 .replace("evosuite-tests", "Evosuite")
                                 .replace(File.separator, "/");
-                        System.out.println(">>> 生成的 filePath: " + filePath); // 调试输出
-                        //插入代码
-                        TestResource tr = new TestResource();
-                        tr.setFilePath(filePath);
-                        tr.setTestProgramId(tp.getTestProgramId());
-                        tr.setUserId(userId);
-                        tr.setCodeContent(code);
-                        testResourceMapper.insertTestResource(tr);
+                        System.out.println(">>> 处理的 filePath: " + filePath); // 调试输出
+                        // 检查是否已存在相同路径的资源
+                        TestResource existingResource = testResourceMapper.findByTestProgramIdAndFilePath(tp.getTestProgramId(), filePath);
+                        if (existingResource != null) {
+                            // 更新现有资源
+                            existingResource.setCodeContent(code);
+                            testResourceMapper.updateCodeContent(existingResource);
+                            System.out.println(">>> 更新现有测试资源，ID: " + existingResource.getId());
+                        } else {
+                            // 插入新资源
+                            TestResource tr = new TestResource();
+                            tr.setFilePath(filePath);
+                            tr.setTestProgramId(tp.getTestProgramId());
+                            tr.setUserId(userId);
+                            tr.setCodeContent(code);
+                            testResourceMapper.insertTestResource(tr);
+                            System.out.println(">>> 插入新测试资源");
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });
 
         // 清理临时目录（可选）
-         FileSystemUtils.deleteRecursively(workDir);
+        FileSystemUtils.deleteRecursively(workDir);
     }
 
     // 构造 javac 命令参数
