@@ -1,16 +1,17 @@
 package com.example.covdecisive.demos.web.controller;
 
+import com.example.covdecisive.demos.web.service.ProgramCodeViewService;
 import com.example.covdecisive.demos.web.service.SourceCodeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.example.covdecisive.demos.web.model.ProgramCodeView;
 import com.example.covdecisive.demos.web.model.SourceCode;
 
 @Controller
@@ -22,11 +23,14 @@ public class SourceController {
     @Autowired
     private SourceCodeService sourceCodeService;
 
+    @Autowired
+    private ProgramCodeViewService programCodeViewService;
+
     @GetMapping("/flat")
     public List<String> getFlatPaths(@RequestParam int programId) {
         //System.out.println("选中项目id："+programId);
-        List<SourceCode> list = sourceCodeService.getByProgramId(programId);
-        return list.stream().map(SourceCode::getFilePath).collect(Collectors.toList());
+        List<ProgramCodeView> list = programCodeViewService.getByProgramId(programId);
+        return list.stream().map(ProgramCodeView::getFile_path).collect(Collectors.toList());
     }
 
     // 获取指定 file_path 的代码内容
@@ -35,7 +39,7 @@ public class SourceController {
     public String getCodeContent(
             @RequestParam("programId") int programId,
             @RequestParam("filePath") String filePath) {
-        String result = sourceCodeService.getCodeContent(programId, filePath);
+        String result = programCodeViewService.getCodeContent(programId, filePath);
         System.out.println("代码文件："+result);
         return result;
     }
@@ -95,5 +99,15 @@ public class SourceController {
         }
 
         return "";
+    }
+
+    //获取指定 programId 下所有 src/main/java 中的 .java 源文件内容
+    @ApiOperation("获取所有需要生成测试用例的java文件")
+    @GetMapping("/getJavaFilesNeedingTests")
+    public List<String> getJavaFilesNeedingTests(@RequestParam int programId) {
+        List<SourceCode> sourceCodes = sourceCodeService.getJavaFilesNeedingTests(programId);
+        return sourceCodes.stream()
+                .map(SourceCode::getCodeContent)
+                .collect(Collectors.toList());
     }
 }
