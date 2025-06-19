@@ -121,7 +121,6 @@ const selectedFilePath = ref(null);
 const selectedTestCaseName = ref(null)
 
 const projectList = ref([]);
-const projectTestList=ref([]);
 
 const selectedProjectId = ref(null);
 
@@ -133,7 +132,6 @@ const projectInput = ref(null);
 //加载项目
 const fetchProjects = async () => {
   console.log("刷新user_id传到后端："+userId.value);
-
   try {
     const res = await axios.get('/all',{
       params: {
@@ -147,23 +145,6 @@ const fetchProjects = async () => {
   }
 }
 
-//加载测试用例
-const fetchTestProjects = async () => {
-  try {
-    const res = await axios.get('/testall',{
-      params: {
-        user_id: userId.value,
-        program_id: selectedProjectId.value
-      }
-    });
-    console.log("测试用例加载：",res.data)
-    projectTestList.value = res.data
-
-  } catch (err) {
-    Message.error('测试用例加载失败')
-  }
-}
-
 // 点击项目加载文件结构
 const handleProjectClick = async (key) => {
   selectedProjectId.value = key;
@@ -171,7 +152,7 @@ const handleProjectClick = async (key) => {
     const res = await axios.get('/flat', {
       params: { programId: key },
     });
-    fetchTestProjects()//获取对应的测试用例列表
+    //fetchTestProjects()//获取对应的测试用例列表
     fileTree.value = buildTreeFromPaths(res.data);
     Message.success('文件结构加载成功');
   } catch (err) {
@@ -212,7 +193,6 @@ const triggerUpload = () => {
   projectInput.value && projectInput.value.click();
   //document.querySelector('input[type="file"]').click();
 }
-
 
 
 //上传项目
