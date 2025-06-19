@@ -1,15 +1,13 @@
 package com.example.covdecisive.demos.web.controller;
 
+import com.example.covdecisive.demos.web.service.GeneratePythonTestService;
 import com.example.covdecisive.demos.web.service.GenerateTestByRDService; // 引用新的 Service 类名
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
@@ -44,6 +42,24 @@ public class TestCaseGenerationController { // 类名已修改为 TestResourceCo
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("发生意外错误: " + e.getMessage()); // 500 Internal Server Error
         } finally {
             System.out.println("--- 程序ID " + programId + " 的测试用例生成请求处理结束 ---");
+        }
+    }
+
+    @Autowired
+    private GeneratePythonTestService pynguinService;
+
+    @GetMapping("/generateProjectTests") // 前端请求路径
+    @ApiOperation("根据programId生成python测试用例并保存") // Swagger 操作描述
+    public ResponseEntity<String> generateProjectTests(@RequestParam int programId,@RequestParam int userId) {
+        try {
+            String result = pynguinService.generatePynguinTestsForProject(programId,userId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("请求错误: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("生成 Pynguin 项目测试用例时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("测试用例生成失败: " + e.getMessage());
         }
     }
 }

@@ -248,7 +248,7 @@ public class GenerateTestByRDService {
         testProgram.setProgramId(programId);
         String testProgramBaseName = programMapper.selectProgramNameById(programId);
 //        String testProgramBaseName = (program.getProgramName() != null ? program.getProgramName() : "UnknownProgram").replace(" ", "_");
-        testProgram.setTestProgramName("Randoop_Generated_Tests_for_" + testProgramBaseName + "_" + UUID.randomUUID().toString().substring(0, 8));
+        testProgram.setTestProgramName("Randoop_Generated_Tests_for_" + testProgramBaseName + "_userId:" + userId + "_" + UUID.randomUUID().toString().substring(0, 8));
         testProgram.setUserId(userId);
         testProgram.setCreateWay(2);
         testProgramMapper.insertTestProgram(testProgram);
@@ -258,7 +258,7 @@ public class GenerateTestByRDService {
             TestResource testResource = new TestResource();
             testResource.setTestProgramId(testProgram.getTestProgramId());
             testResource.setUserId(userId);
-            testResource.setFilePath(randoopOutputDir.relativize(testFile).toString());;
+            testResource.setFilePath("Randoop/"+randoopOutputDir.relativize(testFile).toString());;
             testResource.setCodeContent(Files.readString(testFile));
             testResourceMapper.insertTestResource(testResource);
             System.out.println("已保存测试资源文件: " + testFile.getFileName());
