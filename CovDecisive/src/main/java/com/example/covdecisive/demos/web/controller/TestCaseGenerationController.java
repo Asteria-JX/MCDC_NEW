@@ -1,6 +1,7 @@
 package com.example.covdecisive.demos.web.controller;
 
 import com.example.covdecisive.demos.web.service.GenerateTestByRDService; // 引用新的 Service 类名
+import com.example.covdecisive.demos.web.service.GenerateTestByEvoService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class TestCaseGenerationController { // 类名已修改为 TestResourceCo
 
     @Autowired
     private GenerateTestByRDService generateTestByRDService; // 注入新的 Service 类
+
+    @Autowired
+    private GenerateTestByEvoService generateTestByEvoService;
 
     @GetMapping("/generateTestCase") // 前端请求路径
     @ApiOperation("根据programId生成Randoop测试用例并保存") // Swagger 操作描述
@@ -44,6 +48,18 @@ public class TestCaseGenerationController { // 类名已修改为 TestResourceCo
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("发生意外错误: " + e.getMessage()); // 500 Internal Server Error
         } finally {
             System.out.println("--- 程序ID " + programId + " 的测试用例生成请求处理结束 ---");
+        }
+    }
+
+    @GetMapping("/generateTestCaseByEvo") // 前端请求路径
+    @ApiOperation("根据programId生成Evosuite测试用例并保存") // Swagger 操作描述
+    public ResponseEntity<String> generateTestCases_evoSuite(@RequestParam int programId,@RequestParam int userId) {
+        try {
+            generateTestByEvoService.generate(programId, userId);
+            return ResponseEntity.ok("EvoSuite 测试用例生成成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("生成失败: " + e.getMessage());
         }
     }
 }

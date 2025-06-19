@@ -25,11 +25,10 @@ public class TestResourceController {
     @Autowired
     private TestResourceService testResourceService;
 
-    @GetMapping("/testall")
-    public List<TestResource> getTestAll(@RequestParam Integer user_id, @RequestParam Integer program_id) {
-
-        return testResourceService.getTestAll(user_id, program_id);
-    }
+//    @GetMapping("/testall")
+//    public List<TestResource> getTestAll(@RequestParam Integer user_id, @RequestParam Integer program_id) {
+//        return testResourceService.getTestAll(user_id, program_id);
+//    }
 
     // 获取指定 test_source 的代码内容
     @ApiOperation("获取指定 test_source 的代码内容")

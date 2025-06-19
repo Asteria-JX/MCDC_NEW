@@ -16,9 +16,9 @@ public class TestResourceService {
         }
     }
 
-    public List<TestResource> getTestAll(Integer user_id,Integer program_id) {
-        return testResourceMapper.getTestAll(user_id,program_id);
-    }
+//    public List<TestResource> getTestAll(Integer user_id,Integer program_id) {
+//        return testResourceMapper.getTestAll(user_id,program_id);
+//    }
 
     public String getCodeContentByName(String name) {
         return testResourceMapper.getCodeContentByName(name);
