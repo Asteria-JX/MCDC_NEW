@@ -42,4 +42,11 @@ public interface TestResourceMapper {
     @Insert("INSERT INTO test_resources (file_path, test_program_id, user_id, code_content) " +
             "VALUES (#{filePath}, #{testProgramId}, #{userId}, #{codeContent})")
     void insertTestResource(TestResource testResource);
+
+    // 在TestResourceMapper.java中添加
+    @Update("UPDATE test_resources SET code_content = #{codeContent} WHERE file_path = #{filePath} AND test_program_id = #{testProgramId}")
+    void updateCodeContent(TestResource resource);
+
+    @Select("SELECT * FROM test_resources WHERE test_program_id = #{testProgramId} AND file_path = #{filePath} LIMIT 1")
+    TestResource findByTestProgramIdAndFilePath(@Param("testProgramId") Integer testProgramId, @Param("filePath") String filePath);
 }
