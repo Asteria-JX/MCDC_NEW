@@ -4,6 +4,7 @@ import com.example.covdecisive.demos.web.model.SourceCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -31,7 +32,26 @@ public class SourceCodeService {
 
     public String getFilePathByCodeId(int codeId) {return sourceCodeMapper.getFilePathByCodeId(codeId);}
 
+    //获取指定 programId 下所有 src/main/java 中的 .java 源文件内容
+    public List<SourceCode> getJavaFilesNeedingTests(int programId) {
+        List<SourceCode> allFiles = sourceCodeMapper.getByProgramId(programId);
 
+        return allFiles.stream()
+                .filter(src -> {
+                    String path = src.getFilePath();
+                    if (path == null || !path.endsWith(".java")) return false;
+
+                    // 排除测试类、测试路径、无效目录
+                    String lowerPath = path.toLowerCase();
+                    return !lowerPath.contains("/test/") &&
+                            !lowerPath.contains("/site/") &&
+                            !lowerPath.contains("/media/") &&
+                            !path.contains("Test") &&  // 可选，排除以Test命名的类
+                            !path.contains("/.") &&    // 排除隐藏文件夹
+                            src.getCodeContent() != null && !src.getCodeContent().trim().isEmpty();
+                })
+                .collect(Collectors.toList());
+    }
 
 
 

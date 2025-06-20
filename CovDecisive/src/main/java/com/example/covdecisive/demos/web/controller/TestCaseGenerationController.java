@@ -1,7 +1,8 @@
 package com.example.covdecisive.demos.web.controller;
 
-import com.example.covdecisive.demos.web.service.GenerateTestByRDService; // 引用新的 Service 类名
+import com.example.covdecisive.demos.web.service.GeneratePythonTestService;
 import com.example.covdecisive.demos.web.service.GenerateTestByEvoService;
+import com.example.covdecisive.demos.web.service.GenerateTestByRDService; // 引用新的 Service 类名
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,24 @@ public class TestCaseGenerationController { // 类名已修改为 TestResourceCo
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("生成失败: " + e.getMessage());
+        }
+    }
+
+    @Autowired
+    private GeneratePythonTestService pynguinService;
+
+    @GetMapping("/generatePythonTests") // 前端请求路径
+    @ApiOperation("根据programId生成python测试用例并保存") // Swagger 操作描述
+    public ResponseEntity<String> generatePythonTests(@RequestParam int programId,@RequestParam int userId) {
+        try {
+            String result = pynguinService.generatePynguinTestsForProject(programId,userId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("请求错误: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("生成 Pynguin 项目测试用例时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("测试用例生成失败: " + e.getMessage());
         }
     }
 }

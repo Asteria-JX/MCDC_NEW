@@ -43,10 +43,25 @@ public interface TestResourceMapper {
             "VALUES (#{filePath}, #{testProgramId}, #{userId}, #{codeContent})")
     void insertTestResource(TestResource testResource);
 
+    @Select("SELECT id FROM test_resources WHERE file_path = #{filePath}")
+    Integer isExisted(@Param("filePath") String filePath);
+
+    @Update("UPDATE test_resources SET code_content = #{codeContent} WHERE id = #{id}")
+    void updateTestResourceById(@Param("id") int id, @Param("codeContent") String codeContent);
+
+
+    @Insert("INSERT INTO test_resources (test_program_id, user_id, file_path, code_content) " +
+            "VALUES (#{testProgramId}, #{userId}, #{filePath}, #{codeContent})")
+    void insertTestResource_xyd(@Param("testProgramId") int testProgramId,
+                            @Param("userId") int userId,
+                            @Param("filePath") String filePath,
+                            @Param("codeContent") String codeContent);
+
     // 在TestResourceMapper.java中添加
     @Update("UPDATE test_resources SET code_content = #{codeContent} WHERE file_path = #{filePath} AND test_program_id = #{testProgramId}")
     void updateCodeContent(TestResource resource);
 
     @Select("SELECT * FROM test_resources WHERE test_program_id = #{testProgramId} AND file_path = #{filePath} LIMIT 1")
     TestResource findByTestProgramIdAndFilePath(@Param("testProgramId") Integer testProgramId, @Param("filePath") String filePath);
+
 }
