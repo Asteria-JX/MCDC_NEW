@@ -111,11 +111,12 @@ public class GenerateTestByEvoService {
             System.out.println(">>> 调用 EvoSuite，类名: " + className);
 
             List<String> command = Arrays.asList(
-                    "D:/JDK8/bin/java", "-jar", "D:/Evosuite-1.0.5.2x/evosuite-1.0.6.jar",
+                    "D:/JDK8/bin/java", "-jar", "D:/jars/evosuite-1.0.6.jar",
                     "-class", className,
-                    "-projectCP", "D:/Evosuite-1.0.5.2x/commons-lang3-3.12.0.jar",
+                    "-projectCP", "D:/jars/commons-lang3-3.12.0.jar",
                     "-Dtest_dir=" + workDir.resolve("evosuite-tests").toString()
             );
+
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(workDir.toFile());
             pb.redirectErrorStream(true);
@@ -201,7 +202,7 @@ public class GenerateTestByEvoService {
         List<String> cmd = new ArrayList<>();
         cmd.add("javac");
         cmd.add("-cp");
-        cmd.add("D:/Evosuite-1.0.5.2x/commons-lang3-3.12.0.jar"); // 添加依赖路径
+        cmd.add("D:/jars/commons-lang3-3.12.0.jar"); // 添加依赖路径
         cmd.add("-d");
         cmd.add(srcDir.getParent().resolve("classes").toString());
         cmd.addAll(files);

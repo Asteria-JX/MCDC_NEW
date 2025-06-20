@@ -24,7 +24,7 @@ public interface TestProgramMapper {
 //    @Select("SELECT * FROM test_programs WHERE program_id = #{programId} and user_id = #{userId}")
     @Select("SELECT test_program_id as testProgramId, program_id as programId, user_id as userId, " +
             "test_program_name as testProgramName, create_way as createWay " +
-            "FROM test_programs WHERE program_id = #{programId} and user_id = #{userId}")
+            "FROM test_programs WHERE program_id = #{programId} and user_id = #{userId} and create_way=1")
     TestProgram findByProgramIdAndUserId(@Param("programId") Integer programId, @Param("userId") Integer userId);
 
 }

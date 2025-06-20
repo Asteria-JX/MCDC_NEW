@@ -67,9 +67,9 @@ public class TestCaseGenerationController { // 类名已修改为 TestResourceCo
     @Autowired
     private GeneratePythonTestService pynguinService;
 
-    @GetMapping("/generateProjectTests") // 前端请求路径
+    @GetMapping("/generatePythonTests") // 前端请求路径
     @ApiOperation("根据programId生成python测试用例并保存") // Swagger 操作描述
-    public ResponseEntity<String> generateProjectTests(@RequestParam int programId,@RequestParam int userId) {
+    public ResponseEntity<String> generatePythonTests(@RequestParam int programId,@RequestParam int userId) {
         try {
             String result = pynguinService.generatePynguinTestsForProject(programId,userId);
             return ResponseEntity.ok(result);

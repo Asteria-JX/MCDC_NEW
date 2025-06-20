@@ -19,12 +19,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class GeneratePythonTestService {
@@ -42,7 +42,7 @@ public class GeneratePythonTestService {
     private TestResourceMapper testResourceMapper;
 
     @Value("${python.executable}")
-    private String pythonExecutable; // 从配置文件读取 Python 可执行文件路径
+    private String pythonExecutable;
 
     private static final String TEMP_DIR_PREFIX = "pynguin_temp_";
 
@@ -70,11 +70,14 @@ public class GeneratePythonTestService {
         String sanitizedProgramName = (program.getProgramName() != null ? program.getProgramName() : "unknown_python_program").replaceAll("\\s+", "_");
         Path tempDir = Files.createTempDirectory(TEMP_DIR_PREFIX + sanitizedProgramName);
         Path pythonSourceRoot = tempDir.resolve("python_project_root"); // Pynguin 的 --project-path
-        Path pynguinOutputDir = tempDir.resolve("pynguin_output"); // Pynguin 生成测试用例的输出目录
-        Path pynguinReportDir = tempDir.resolve("pynguin_report"); // Pynguin 生成报告目录的输出目录
+
+        // 定义 Pynguin 输出和报告的基准目录
+        Path basePynguinOutputDir = tempDir.resolve("pynguin_output_base");
+        Path basePynguinReportDir = tempDir.resolve("pynguin_report_base");
+
         Files.createDirectories(pythonSourceRoot);
-        Files.createDirectories(pynguinOutputDir);
-        Files.createDirectories(pynguinReportDir);
+        Files.createDirectories(basePynguinOutputDir); // 确保基准目录存在
+        Files.createDirectories(basePynguinReportDir);
         System.out.println("已创建临时工作目录：" + tempDir.toAbsolutePath());
 
         // 2. 将 Python 源代码写入临时文件，并保持其原始目录结构
@@ -107,7 +110,6 @@ public class GeneratePythonTestService {
 
         // 3. 确定所有要测试的 Python 模块
         List<String> modulesToTest = new ArrayList<>();
-        // 假设项目根目录就是 pythonSourceRoot
         for (String relativePath : pythonFilePaths) {
             // 排除 __init__.py 和测试文件本身 (如果数据库中包含测试文件)
             if (relativePath.contains("__init__.py") || relativePath.startsWith("test_")) {
@@ -129,9 +131,18 @@ public class GeneratePythonTestService {
         System.out.println("检测到以下 Python 模块将进行测试: " + modulesToTest);
 
         // 4. 逐个模块执行 Pynguin
-        List<Path> allGeneratedTestFiles = new ArrayList<>();
+        Set<Path> allGeneratedTestFiles = new HashSet<>(); // 使用 Set 来自动处理重复文件，即使路径不同也可能代表同一个逻辑文件
+
         for (String module : modulesToTest) {
             System.out.println("\n--- 调用 Pynguin 为模块: " + module + " 生成测试用例 ---");
+
+            // 为当前模块创建独立的输出和报告目录
+            // 例如：pynguin_output_base/python_example_utils_string_utils
+            Path modulePynguinOutputDir = basePynguinOutputDir.resolve(module.replace(".", "_"));
+            Path modulePynguinReportDir = basePynguinReportDir.resolve(module.replace(".", "_"));
+            Files.createDirectories(modulePynguinOutputDir); // 确保目录存在
+            Files.createDirectories(modulePynguinReportDir); // 确保目录存在
+
 
             List<String> pynguinCommand = new ArrayList<>();
             pynguinCommand.add(pythonExecutable);
@@ -142,24 +153,17 @@ public class GeneratePythonTestService {
             pynguinCommand.add(pythonSourceRoot.toAbsolutePath().toString());
 
             pynguinCommand.add("--output-path");
-            pynguinCommand.add(pynguinOutputDir.toAbsolutePath().toString());
+            pynguinCommand.add(modulePynguinOutputDir.toAbsolutePath().toString()); // 使用模块专属的输出目录
 
             pynguinCommand.add("--report-dir");
-            pynguinCommand.add(pynguinReportDir.toAbsolutePath().toString());
+            pynguinCommand.add(modulePynguinReportDir.toAbsolutePath().toString()); // 使用模块专属的报告目录
 
-
-//            pynguinCommand.add("--module");
             pynguinCommand.add("--module-name");
             pynguinCommand.add(module);
-
-            // 可以根据需要添加其他 Pynguin 参数
-            // pynguinCommand.add("--type-inference-timeout");
-            // pynguinCommand.add("60");
 
             System.out.println("Pynguin 命令: " + String.join(" ", pynguinCommand));
 
             ProcessBuilder pynguinProcessBuilder = new ProcessBuilder(pynguinCommand);
-            // Pynguin 的工作目录设置在临时目录的根部，以便它能找到 --project-path 指定的 Python 文件
             pynguinProcessBuilder.directory(tempDir.toFile());
             pynguinProcessBuilder.redirectErrorStream(true);
 
@@ -181,11 +185,27 @@ public class GeneratePythonTestService {
             } else {
                 System.out.println("模块 " + module + " 的 Pynguin 执行成功。");
                 // 收集当前模块生成的所有测试文件
-                Files.walk(pynguinOutputDir)
+                Files.walk(modulePynguinOutputDir) // 遍历当前模块的专属输出目录
                         .filter(p -> p.toString().endsWith(".py") && p.getFileName().toString().startsWith("test_"))
-                        .forEach(allGeneratedTestFiles::add);
+                        .forEach(allGeneratedTestFiles::add); // 添加到 Set 中
+            }
+
+            // 获取并打印当前模块的 statistics.csv
+            Path statisticsFile = modulePynguinReportDir.resolve("statistics.csv");
+            if (Files.exists(statisticsFile)) {
+                try {
+                    String statisticsContent = Files.readString(statisticsFile);
+                    System.out.println("Pynguin 统计信息 (模块 " + module + "):\n" + statisticsContent);
+                } catch (IOException e) {
+                    System.err.println("无法读取模块 " + module + " 的统计文件: " + e.getMessage());
+                }
+            } else {
+                System.out.println("警告: 模块 " + module + " 未找到统计文件 statistics.csv");
             }
         }
+
+        //通过随机数保存每一次的记录
+        String randomNum = UUID.randomUUID().toString().substring(0, 8);
 
         if (allGeneratedTestFiles.isEmpty()) {
             System.out.println("警告：Pynguin 未为程序ID " + programId + " 生成任何测试文件。这可能表示被测试的模块或 Pynguin 配置存在问题。");
@@ -194,9 +214,8 @@ public class GeneratePythonTestService {
             // 5. 将生成的测试用例保存到数据库
             TestProgram testProgram = new TestProgram();
             testProgram.setProgramId(programId);
-//        String testProgramBaseName = program.getProgramName() != null ? program.getProgramName() : "UnknownProgram";
             String testProgramBaseName = programMapper.selectProgramNameById(programId);
-            testProgram.setTestProgramName("Pynguin_Generated_Tests_for_" + testProgramBaseName + "_userId:" + userId + "_" + UUID.randomUUID().toString().substring(0, 8));
+            testProgram.setTestProgramName("Pynguin_Generated_Tests_for_" + testProgramBaseName + "_userId:" + userId + "_" + randomNum);
             testProgram.setUserId(userId);
             testProgram.setCreateWay(4); // 假设 4 代表 Pynguin 生成
             testProgramMapper.insertTestProgram(testProgram);
@@ -206,8 +225,8 @@ public class GeneratePythonTestService {
                 TestResource testResource = new TestResource();
                 testResource.setTestProgramId(testProgram.getTestProgramId());
                 testResource.setUserId(userId);
-                // 保存相对路径，确保在读取时能正确重构
-                testResource.setFilePath(pynguinOutputDir.relativize(testFile).toString());
+                // 保存相对于整个临时目录的路径
+                testResource.setFilePath("pybguin_"+randomNum+"/"+tempDir.relativize(testFile).toString());
                 testResource.setCodeContent(Files.readString(testFile));
                 testResourceMapper.insertTestResource(testResource);
                 System.out.println("已保存测试资源文件: " + testFile.getFileName());
@@ -215,55 +234,15 @@ public class GeneratePythonTestService {
             System.out.println("所有生成的测试用例文件已保存到数据库。");
         }
 
-//        // 5. 将生成的测试用例保存到数据库
-//        TestProgram testProgram = new TestProgram();
-//        testProgram.setProgramId(programId);
-////        String testProgramBaseName = program.getProgramName() != null ? program.getProgramName() : "UnknownProgram";
-//        String testProgramBaseName = programMapper.selectProgramNameById(programId);
-//        testProgram.setTestProgramName("Pynguin_Generated_Tests_for_" + testProgramBaseName + "_userId:" + userId);
-//        testProgram.setUserId(userId);
-//        testProgram.setCreateWay(3); // 假设 3 代表 Pynguin 生成
-//        testProgramMapper.insertTestProgram(testProgram);
-//        System.out.println("已创建新的测试项目：TestProgramId=" + testProgram.getTestProgramId());
-//
-//        for (Path testFile : allGeneratedTestFiles) {
-//            TestResource testResource = new TestResource();
-//            testResource.setTestProgramId(testProgram.getTestProgramId());
-//            testResource.setUserId(userId);
-//            // 保存相对路径，确保在读取时能正确重构
-//            testResource.setFilePath(pynguinOutputDir.relativize(testFile).toString());
-//            testResource.setCodeContent(Files.readString(testFile));
-//            testResourceMapper.insertTestResource(testResource);
-//            System.out.println("已保存测试资源文件: " + testFile.getFileName());
-//        }
-//        System.out.println("所有生成的测试用例文件已保存到数据库。");
-
-        // 6. 获取report_dir中的获取 Pynguin 生成的 statistics.csv 内容
-        Path statisticsFile = pynguinReportDir.resolve("statistics.csv");
-        if (Files.exists(statisticsFile)) {
-            try {
-                // 读取 statistics.csv 内容
-                String statisticsContent = Files.readString(statisticsFile);
-                System.out.println("Pynguin 统计信息:\n" + statisticsContent);
-
-                // 如果需要，可以将统计信息保存到数据库或其他地方
-                // saveStatisticsToDatabase(statisticsContent, testProgram.getTestProgramId());
-            } catch (IOException e) {
-                System.err.println("无法读取统计文件: " + e.getMessage());
-            }
-        } else {
-            System.out.println("警告: 未找到统计文件 statistics.csv");
-        }
-
-        // 7. 清理临时目录
+        // 6. 清理临时目录（将删除所有创建的子目录和文件）
         deleteDirectory(tempDir.toFile());
         System.out.println("已清理临时目录: " + tempDir);
 
         if (allGeneratedTestFiles.isEmpty()) {
-            System.out.println("警告：Pynguin 未为程序ID " + programId + " 生成任何测试文件。这可能表示被测试的模块或 Pynguin 配置存在问题。");
             return "警告：Pynguin 未为程序ID " + programId + " 生成任何测试文件。这可能表示被测试的模块或 Pynguin 配置存在问题。";
         } else {
-            return "测试用例已成功生成并保存，程序 ID: " + programId + "。共生成 " + allGeneratedTestFiles.size() + " 个测试文件。";
+            String testListName="pybguin_"+randomNum;
+            return "测试用例已成功生成并保存，列表名:" + testListName + "。共生成 " + allGeneratedTestFiles.size() + " 个测试文件。";
         }
     }
 
