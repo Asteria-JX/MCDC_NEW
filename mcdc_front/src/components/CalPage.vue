@@ -44,7 +44,7 @@
               { label: 'EvoSuite', value: 0 },
               { label: 'Randoop', value: 1 },
               { label: 'LLM大模型', value: 2 },
-              { label: 'Python', value: 3 }
+              { label: 'Pynguin', value: 3 }
             ]"
           />
 
@@ -69,6 +69,7 @@
         </div>
 
         <div v-else-if="testCases.length > 0" class="test-cases-container" style="max-height: 400px; overflow-y: auto;">
+          <a-alert v-if="testCases" type="success" show-icon >{{testCases}}</a-alert>
 <!--          <h3>生成的MC/DC测试用例 (共 {{ testCases.length }} 个):</h3>-->
 <!--          <table class="custom-table">-->
 <!--            <thead>-->
@@ -365,15 +366,14 @@ export default {
           this.testCases = res.data;
         }
         else if(this.selectedGenerationMethod == '3'){
-          const res = await axios.post('/', {
-            programId: this.selectedTestProgramId,
-            userId: this.userID
+          const res = await axios.get('/generatePythonTests', {
+            params: { programId: this.selectedTestProgramId, userId:this.userID }
           });
           this.testCases = res.data;
         }
         // 添加调试日志
         // console.log("原始测试用例数据:", res.data);
-        // console.log("赋值后的测试用例:", this.testCases);
+        console.log("赋值后的测试用例:", this.testCases);
 
         // 验证数据格式
         // if (!Array.isArray(this.testCases) || this.testCases.length === 0) {
@@ -388,7 +388,7 @@ export default {
         //   }
         // });
 
-        Message.success(`成功生成 ${this.testCases.length} 个测试用例`);
+        Message.success(`成功生成测试用例`);
       } catch (error) {
         const errorMsg = error.response?.data?.message || error.message;
         Message.error(`生成测试用例失败: ${errorMsg}`);

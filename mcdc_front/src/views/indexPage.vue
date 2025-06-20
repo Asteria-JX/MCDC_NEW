@@ -234,7 +234,7 @@ onMounted(() => {
 <style scoped>
 .layout-demo {
   /* 确保 .layout-demo 占据整个视口高度 */
-  height: 100vh;
+  height: 98vh;
   display: flex;
   flex-direction: column;
 }
